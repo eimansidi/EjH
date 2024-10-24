@@ -38,16 +38,14 @@ public class HelloController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        connection = conectarBaseDatos(); // Conectar a la base de datos
-        crearBaseDatos(); // Crear la base de datos si no existe
-        crearTablaPersonas(); // Crear la tabla si no existe
+        connection = conectarBaseDatos();
+        crearBaseDatos();
+        crearTablaPersonas();
 
-        // Configurar las columnas de la tabla
         nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         apellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
         edad.setCellValueFactory(new PropertyValueFactory<>("edad"));
 
-        // Cargar datos desde la base de datos
         cargarDatosDesdeBaseDeDatos();
     }
 
@@ -64,9 +62,8 @@ public class HelloController implements Initializable {
     }
 
     private void crearBaseDatos() {
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "12345678");
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/", "root", "12345678");
              Statement stmt = conn.createStatement()) {
-            // Crear la base de datos si no existe
             String sqlCrearDB = "CREATE DATABASE IF NOT EXISTS personas";
             stmt.executeUpdate(sqlCrearDB);
             System.out.println("Base de datos 'personas' creada o ya existe.");
