@@ -94,23 +94,24 @@ public class HelloController implements Initializable {
     }
 
     @FXML
-    void agregar(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("agregar.fxml"));
-            Scene scene = new Scene(loader.load());
+    void agregar(Persona persona) {
+        String sql = "INSERT INTO Persona (nombre, apellidos, edad) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, persona.getNombre());
+            pstmt.setString(2, persona.getApellidos());
+            pstmt.setInt(3, persona.getEdad());
+            pstmt.executeUpdate();
 
-            AgregarController agregarController = loader.getController();
-            agregarController.setMainController(this);
-            agregarController.setModoModificar(false);
-
-            Stage stage = new Stage();
-            stage.setTitle("Nueva Persona");
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(scene);
-            stage.setResizable(false);
-            stage.showAndWait();
-        } catch (IOException e) {
+            // Obtener el ID generado automáticamente
+            ResultSet generatedKeys = pstmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int id = generatedKeys.getInt(1);
+                persona = new Persona(id, persona.getNombre(), persona.getApellidos(), persona.getEdad());
+                tableView.getItems().add(persona);
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
+            mostrarAlertaError("Error al agregar", "No se pudo agregar la persona a la base de datos.");
         }
     }
 
