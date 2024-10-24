@@ -38,18 +38,23 @@ public class HelloController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        connection = conectarBaseDatos(); // Conectar a la base de datos
+        crearBaseDatos(); // Crear la base de datos si no existe
+        crearTablaPersonas(); // Crear la tabla si no existe
+
+        // Configurar las columnas de la tabla
         nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         apellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
         edad.setCellValueFactory(new PropertyValueFactory<>("edad"));
-        connection = conectarBaseDatos();
-        crearTablaPersonas();
+
+        // Cargar datos desde la base de datos
         cargarDatosDesdeBaseDeDatos();
     }
 
     private Connection conectarBaseDatos() {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/personas", "root", "12345678");
+            conn = DriverManager.getConnection("jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/personas", "root", "12345678");
             System.out.println("Conexión establecida con la base de datos.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -58,8 +63,21 @@ public class HelloController implements Initializable {
         return conn;
     }
 
+    private void crearBaseDatos() {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/", "root", "12345678");
+             Statement stmt = conn.createStatement()) {
+            // Crear la base de datos si no existe
+            String sqlCrearDB = "CREATE DATABASE IF NOT EXISTS personas";
+            stmt.executeUpdate(sqlCrearDB);
+            System.out.println("Base de datos 'personas' creada o ya existe.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            mostrarAlertaError("Error al crear la base de datos", "No se pudo crear la base de datos 'personas'.");
+        }
+    }
+
     private void crearTablaPersonas() {
-        String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS Persona ("
+        String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS persona ("
                 + "id INT NOT NULL AUTO_INCREMENT, "
                 + "nombre VARCHAR(250) NULL DEFAULT NULL, "
                 + "apellidos VARCHAR(250) NULL DEFAULT NULL, "
