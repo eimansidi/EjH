@@ -75,7 +75,9 @@ public class AgregarController {
             return;
         }
 
-        Persona nuevaPersona = new Persona(nombre, apellidos, edad);
+        int id = 0;
+
+        Persona nuevaPersona = new Persona(id, nombre, apellidos, edad);
 
         if (modoModificar && personaOriginal != null) {
             helloController.modificarPersonaTabla(personaOriginal, nuevaPersona);
