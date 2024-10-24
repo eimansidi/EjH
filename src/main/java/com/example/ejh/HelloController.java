@@ -134,105 +134,21 @@ public class HelloController implements Initializable {
     }
 
     @FXML
-    void eliminar(ActionEvent event) {
+    void eliminar() {
         Persona personaSeleccionada = tableView.getSelectionModel().getSelectedItem();
         if (personaSeleccionada == null) {
-            mostrarAlertaError("Error", "Debes seleccionar una persona para eliminarla.");
+            mostrarAlertaError("Error", "Debes seleccionar una persona para eliminar.");
             return;
         }
 
-        tableView.getItems().remove(personaSeleccionada);
-        mostrarAlertaExito("Eliminacion", "Persona eliminada correctamente.");
-    }
-
-    @FXML
-    public void filtrarPorNombre() {
-        String filtro = txtFiltro.getText().toLowerCase();
-
-        if (filtro.isEmpty()) {
-            tableView.setItems(listaPersonas);
-        } else {
-            ObservableList<Persona> listaFiltrada = FXCollections.observableArrayList();
-            for (Persona persona : listaPersonas) {
-                if (persona.getNombre().toLowerCase().contains(filtro)) {
-                    listaFiltrada.add(persona);
-                }
-            }
-            tableView.setItems(listaFiltrada);
-        }
-    }
-
-    public void exportar() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Guardar como");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
-
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
-        File file = fileChooser.showSaveDialog(null);
-
-        if (file != null) {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                writer.write("Nombre,Apellidos,Edad");
-                writer.newLine();
-
-                ObservableList<Persona> personas = tableView.getItems();
-                for (Persona persona : personas) {
-                    writer.write(String.format("%s,%s,%d", persona.getNombre(), persona.getApellidos(), persona.getEdad()));
-                    writer.newLine();
-                }
-
-                mostrarAlertaExito("Exportación exitosa", "Los datos han sido exportados correctamente.");
-            } catch (IOException e) {
-                mostrarAlertaError("Error", "No se pudo exportar el archivo.");
-            }
-        }
-    }
-
-    public void importar() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Abrir archivo");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
-
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
-        File file = fileChooser.showOpenDialog(null);
-
-        if (file != null) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line;
-                boolean isFirstLine = true;
-                while ((line = reader.readLine()) != null) {
-                    if (isFirstLine) {
-                        isFirstLine = false;
-                        continue;
-                    }
-
-                    String[] data = line.split(",");
-                    if (data.length == 3) {
-                        String nombre = data[0].trim();
-                        String apellidos = data[1].trim();
-                        int edad;
-
-                        try {
-                            edad = Integer.parseInt(data[2].trim());
-                        } catch (NumberFormatException e) {
-                            mostrarAlertaError("Error", "La edad debe ser un número válido: " + line);
-                            continue;
-                        }
-
-                        if (tableView.getItems().stream().noneMatch(p -> p.getNombre().equals(nombre) && p.getApellidos().equals(apellidos))) {
-                            tableView.getItems().add(new Persona(nombre, apellidos, edad));
-                        } else {
-                            mostrarAlertaError("Duplicado", "El registro ya existe: " + line);
-                        }
-                    } else {
-                        mostrarAlertaError("Error", "Formato de línea inválido: " + line);
-                    }
-                }
-
-                mostrarAlertaExito("Info", "Los datos han sido importados correctamente.");
-            } catch (IOException e) {
-                mostrarAlertaError("Error", "No se pudo importar el archivo.");
-            }
+        String sql = "DELETE FROM Persona WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, personaSeleccionada.getId());
+            pstmt.executeUpdate();
+            tableView.getItems().remove(personaSeleccionada);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            mostrarAlertaError("Error al eliminar", "No se pudo eliminar la persona de la base de datos.");
         }
     }
 
@@ -241,7 +157,6 @@ public class HelloController implements Initializable {
     }
 
     public void agregarPersonaTabla(Persona persona) {
-        listaPersonas.add(persona);
         tableView.getItems().add(persona);
     }
 
