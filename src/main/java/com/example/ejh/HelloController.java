@@ -18,6 +18,9 @@ import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 public class HelloController implements Initializable {
@@ -44,6 +47,18 @@ public class HelloController implements Initializable {
         nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         apellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
         edad.setCellValueFactory(new PropertyValueFactory<>("edad"));
+    }
+
+    private Connection conectarBaseDatos() {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/personas", "root", "12345678");
+            System.out.println("Conexión establecida con la base de datos.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            mostrarAlertaError("Error de conexión", "No se pudo conectar a la base de datos.");
+        }
+        return conn;
     }
 
     @FXML
