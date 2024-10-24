@@ -116,30 +116,20 @@ public class HelloController implements Initializable {
     }
 
     @FXML
-    void modificar(ActionEvent event) {
-        Persona personaSeleccionada = tableView.getSelectionModel().getSelectedItem();
-        if (personaSeleccionada == null) {
-            mostrarAlertaError("Error", "Debes seleccionar una persona para modificarla.");
-            return;
-        }
+    void modificar(Persona personaOriginal, Persona personaModificada) {
+        String sql = "UPDATE Persona SET nombre = ?, apellidos = ?, edad = ? WHERE id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, personaModificada.getNombre());
+            pstmt.setString(2, personaModificada.getApellidos());
+            pstmt.setInt(3, personaModificada.getEdad());
+            pstmt.setInt(4, personaOriginal.getId());
+            pstmt.executeUpdate();
 
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("agregar.fxml"));
-            Scene scene = new Scene(loader.load());
-
-            AgregarController agregarController = loader.getController();
-            agregarController.setMainController(this);
-            agregarController.setModoModificar(true);
-            agregarController.llenarCampos(personaSeleccionada);
-
-            Stage stage = new Stage();
-            stage.setTitle("Editar persona");
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(scene);
-            stage.setResizable(false);
-            stage.showAndWait();
-        } catch (IOException e) {
+            int index = tableView.getItems().indexOf(personaOriginal);
+            tableView.getItems().set(index, personaModificada);
+        } catch (SQLException e) {
             e.printStackTrace();
+            mostrarAlertaError("Error al modificar", "No se pudo modificar la persona en la base de datos.");
         }
     }
 
