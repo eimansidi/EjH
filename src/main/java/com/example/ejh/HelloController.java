@@ -21,6 +21,7 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ResourceBundle;
 
 public class HelloController implements Initializable {
@@ -40,7 +41,7 @@ public class HelloController implements Initializable {
     @FXML
     private TextField txtFiltro;
 
-    private ObservableList<Persona> listaPersonas = FXCollections.observableArrayList();
+    private Connection connection;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -59,6 +60,24 @@ public class HelloController implements Initializable {
             mostrarAlertaError("Error de conexión", "No se pudo conectar a la base de datos.");
         }
         return conn;
+    }
+
+    private void crearTablaPersonas() {
+        String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS Persona ("
+                + "id INT NOT NULL AUTO_INCREMENT, "
+                + "nombre VARCHAR(250) NULL DEFAULT NULL, "
+                + "apellidos VARCHAR(250) NULL DEFAULT NULL, "
+                + "edad INT NULL DEFAULT NULL, "
+                + "PRIMARY KEY (id)"
+                + ") ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(sqlCrearTabla);
+            System.out.println("Tabla 'Persona' creada o ya existe.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            mostrarAlertaError("Error al crear la tabla", "No se pudo crear la tabla Persona.");
+        }
     }
 
     @FXML
