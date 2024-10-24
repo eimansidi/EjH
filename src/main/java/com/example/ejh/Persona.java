@@ -3,14 +3,20 @@ package com.example.ejh;
 import java.util.Objects;
 
 public class Persona {
+    private int id;
     private String nombre;
     private String apellidos;
     private int edad;
 
-    public Persona(String nombre, String apellidos, int edad) {
+    public Persona(int id, String nombre, String apellidos, int edad) {
+        this.id=id;
         this.nombre = nombre;
         this.apellidos = apellidos;
         this.edad = edad;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getNombre() {
