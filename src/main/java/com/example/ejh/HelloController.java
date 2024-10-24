@@ -18,10 +18,7 @@ import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ResourceBundle;
 
 public class HelloController implements Initializable {
@@ -77,6 +74,22 @@ public class HelloController implements Initializable {
         } catch (SQLException e) {
             e.printStackTrace();
             mostrarAlertaError("Error al crear la tabla", "No se pudo crear la tabla Persona.");
+        }
+    }
+
+    private void cargarDatosDesdeBaseDeDatos() {
+        String sql = "SELECT * FROM Persona";
+        try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String nombre = rs.getString("nombre");
+                String apellidos = rs.getString("apellidos");
+                int edad = rs.getInt("edad");
+                tableView.getItems().add(new Persona(id, nombre, apellidos, edad));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            mostrarAlertaError("Error de carga", "No se pudieron cargar los datos de la base de datos.");
         }
     }
 
