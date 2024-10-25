@@ -1,13 +1,19 @@
 package com.example.ejh;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.net.URL;
 import java.sql.*;
 import java.util.ResourceBundle;
@@ -33,35 +39,38 @@ public class HelloController implements Initializable {
     @FXML
     private TextField txtEdad;
 
-    private ObservableList<Persona> listaPersonas = FXCollections.observableArrayList();
-
     private Connection connection;
-    private String db_url = "jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/";
-    private String user = "admin";
-    private String password = "12345678";
+    private final String db_url = "jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/";
+    private final String user = "admin";
+    private final String password = "12345678";
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        listViewPersonas.setItems(personas);
-        crearBaseDatos();
-        connection = conectarBaseDatos("personas");
-        if (connection != null) {
-            crearTablaPersonas();
-            cargarDatosDesdeBaseDeDatos();
+        // Conectar a la base de datos 'personas' si existe, o crearla si no existe
+        connection = conectarBaseDatos("personas"); // Conectar a la BD existente
+        if (connection != null) { // Proceder solo si la conexión fue exitosa
+            crearTablaPersonas(); // Crear la tabla 'Persona' si no existe
+            cargarDatosDesdeBaseDeDatos(); // Cargar los datos existentes
         }
+        // Configurar columnas de la tabla
         nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         apellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
         edad.setCellValueFactory(new PropertyValueFactory<>("edad"));
     }
 
-    public Connection conectarBaseDatos(String dbName) {
+    Connection conectarBaseDatos(String dbName) {
         Connection conn = null;
         try {
+            // Intentar conectar a la base de datos
             conn = DriverManager.getConnection(db_url + dbName, user, password);
-            mostrarAlertaExito("Info","Conexion exitosa a la base de datos: " + dbName);
+            mostrarAlertaExito("Info", "Conexión exitosa a la base de datos: " + dbName);
         } catch (SQLException e) {
-            e.printStackTrace();
-            mostrarAlertaError("Error de conexión", "No se pudo conectar a la base de datos.");
+            if (e.getErrorCode() == 1049) {
+                crearBaseDatos();
+                conn = conectarBaseDatos(dbName);
+            } else {
+                mostrarAlertaError("Error de conexión", "No se pudo conectar a la base de datos.");
+            }
         }
         return conn;
     }
@@ -71,27 +80,42 @@ public class HelloController implements Initializable {
              Statement stmt = conn.createStatement()) {
             String sql = "CREATE DATABASE IF NOT EXISTS personas";
             stmt.executeUpdate(sql);
-            System.out.println("Base de datos 'personas' creada o ya existia.");
+            System.out.println("Base de datos 'personas' creada o ya existía.");
         } catch (SQLException e) {
             e.printStackTrace();
+            mostrarAlertaError("Error de creación", "No se pudo crear la base de datos.");
         }
     }
 
     private void crearTablaPersonas() {
-        String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS Persona ("
-                + "id INT NOT NULL AUTO_INCREMENT, "
-                + "nombre VARCHAR(250) NULL DEFAULT NULL, "
-                + "apellidos VARCHAR(250) NULL DEFAULT NULL, "
-                + "edad INT NULL DEFAULT NULL, "
-                + "PRIMARY KEY (id)"
-                + ") ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        if (!tablaExiste("Persona")) {  // Verifica si la tabla ya existe
+            String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS Persona ("
+                    + "id INT NOT NULL AUTO_INCREMENT, "
+                    + "nombre VARCHAR(250) NULL DEFAULT NULL, "
+                    + "apellidos VARCHAR(250) NULL DEFAULT NULL, "
+                    + "edad INT NULL DEFAULT NULL, "
+                    + "PRIMARY KEY (id)"
+                    + ") ENGINE=InnoDB DEFAULT CHARSET=latin1;";
 
-        try (Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate(sqlCrearTabla);
-            System.out.println("Tabla 'Persona' creada o ya existe.");
+            try (Statement stmt = connection.createStatement()) {
+                stmt.executeUpdate(sqlCrearTabla);
+                System.out.println("Tabla 'Persona' creada.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                mostrarAlertaError("Error al crear la tabla", "No se pudo crear la tabla Persona.");
+            }
+        } else {
+            System.out.println("La tabla 'Persona' ya existe.");
+        }
+    }
+
+    private boolean tablaExiste(String nombreTabla) {
+        try (ResultSet rs = connection.getMetaData().getTables(null, null, nombreTabla, null)) {
+            return rs.next();
         } catch (SQLException e) {
             e.printStackTrace();
-            mostrarAlertaError("Error al crear la tabla", "No se pudo crear la tabla Persona.");
+            mostrarAlertaError("Error", "No se pudo verificar si la tabla " + nombreTabla + " existe.");
+            return false;
         }
     }
 
@@ -113,68 +137,50 @@ public class HelloController implements Initializable {
 
     @FXML
     void agregar(ActionEvent event) {
-        String nombre = txtNombre.getText();
-        String apellidos = txtApellidos.getText();
-        int edad;
-
         try {
-            edad = Integer.parseInt(txtEdad.getText());
-        } catch (NumberFormatException e) {
-            mostrarAlertaError("Error", "La edad debe ser un número válido.");
-            return;
-        }
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("agregar.fxml"));
+            Scene scene = new Scene(loader.load());
 
-        Persona persona = new Persona(0, nombre, apellidos, edad);
+            AgregarController agregarController = loader.getController();
+            agregarController.setMainController(this);
+            agregarController.setModoModificar(false);
 
-        String sql = "INSERT INTO Persona (nombre, apellidos, edad) VALUES (?, ?, ?)";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            pstmt.setString(1, persona.getNombre());
-            pstmt.setString(2, persona.getApellidos());
-            pstmt.setInt(3, persona.getEdad());
-            pstmt.executeUpdate();
-
-            ResultSet generatedKeys = pstmt.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                int id = generatedKeys.getInt(1);
-                persona = new Persona(id, persona.getNombre(), persona.getApellidos(), persona.getEdad());
-                tableView.getItems().add(persona);
-                mostrarAlertaExito("Éxito", "Persona agregada exitosamente.");
-            }
-        } catch (SQLException e) {
+            Stage stage = new Stage();
+            stage.setTitle("Nueva Persona");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(scene);
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (IOException e) {
             e.printStackTrace();
-            mostrarAlertaError("Error al agregar", "No se pudo agregar la persona a la base de datos.");
         }
-
     }
-
 
     @FXML
     void modificar(ActionEvent event) {
         Persona personaSeleccionada = tableView.getSelectionModel().getSelectedItem();
         if (personaSeleccionada == null) {
-            mostrarAlertaError("Error", "Debes seleccionar una persona para modificar.");
+            mostrarAlertaError("Error", "Debes seleccionar una persona para modificarla.");
             return;
         }
 
-        String nombre = txtNombre.getText();
-        String apellidos = txtApellidos.getText();
-        int edad = Integer.parseInt(txtEdad.getText());
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("agregar.fxml"));
+            Scene scene = new Scene(loader.load());
 
-        String sql = "UPDATE Persona SET nombre = ?, apellidos = ?, edad = ? WHERE id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, nombre);
-            pstmt.setString(2, apellidos);
-            pstmt.setInt(3, edad);
-            pstmt.setInt(4, personaSeleccionada.getId());
-            pstmt.executeUpdate();
+            AgregarController agregarController = loader.getController();
+            agregarController.setMainController(this);
+            agregarController.setModoModificar(true);
+            agregarController.llenarCampos(personaSeleccionada);
 
-            personaSeleccionada.setNombre(nombre);
-            personaSeleccionada.setApellidos(apellidos);
-            personaSeleccionada.setEdad(edad);
-            tableView.refresh(); // Actualiza la tabla para mostrar los cambios
-        } catch (SQLException e) {
+            Stage stage = new Stage();
+            stage.setTitle("Editar persona");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(scene);
+            stage.setResizable(false);
+            stage.showAndWait();
+        } catch (IOException e) {
             e.printStackTrace();
-            mostrarAlertaError("Error al modificar", "No se pudo modificar la persona en la base de datos.");
         }
     }
 
@@ -191,14 +197,11 @@ public class HelloController implements Initializable {
             pstmt.setInt(1, personaSeleccionada.getId());
             pstmt.executeUpdate();
             tableView.getItems().remove(personaSeleccionada);
+            mostrarAlertaExito("Info", "Persona eliminada correctamente");
         } catch (SQLException e) {
             e.printStackTrace();
             mostrarAlertaError("Error al eliminar", "No se pudo eliminar la persona de la base de datos.");
         }
-    }
-
-    public boolean existePersona(Persona persona) {
-        return tableView.getItems().contains(persona);
     }
 
     public void agregarPersonaTabla(Persona persona) {
