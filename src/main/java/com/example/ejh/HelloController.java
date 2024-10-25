@@ -1,12 +1,11 @@
 package com.example.ejh;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.net.URL;
@@ -34,28 +33,32 @@ public class HelloController implements Initializable {
     @FXML
     private TextField txtEdad;
 
+    private ObservableList<Persona> listaPersonas = FXCollections.observableArrayList();
+
     private Connection connection;
+    private String db_url = "jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/";
+    private String user = "admin";
+    private String password = "12345678";
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        connection = conectarBaseDatos(); // Conectar a la base de datos
-        crearBaseDatos(); // Crear la base de datos si no existe
-        crearTablaPersonas(); // Crear la tabla si no existe
-
-        // Configurar las columnas de la tabla
+        listViewPersonas.setItems(personas);
+        crearBaseDatos();
+        connection = conectarBaseDatos("personas");
+        if (connection != null) {
+            crearTablaPersonas();
+            cargarDatosDesdeBaseDeDatos();
+        }
         nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         apellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
         edad.setCellValueFactory(new PropertyValueFactory<>("edad"));
-
-        // Cargar datos desde la base de datos
-        cargarDatosDesdeBaseDeDatos();
     }
 
-    private Connection conectarBaseDatos() {
+    public Connection conectarBaseDatos(String dbName) {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection("jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/personas", "root", "12345678");
-            System.out.println("Conexión establecida con la base de datos.");
+            conn = DriverManager.getConnection(db_url + dbName, user, password);
+            mostrarAlertaExito("Info","Conexion exitosa a la base de datos: " + dbName);
         } catch (SQLException e) {
             e.printStackTrace();
             mostrarAlertaError("Error de conexión", "No se pudo conectar a la base de datos.");
@@ -64,15 +67,13 @@ public class HelloController implements Initializable {
     }
 
     private void crearBaseDatos() {
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://database-1.cr60ewocg533.us-east-1.rds.amazonaws.com:3306/", "root", "12345678");
+        try (Connection conn = DriverManager.getConnection(db_url, user, password);
              Statement stmt = conn.createStatement()) {
-            // Crear la base de datos si no existe
-            String sqlCrearDB = "CREATE DATABASE IF NOT EXISTS personas";
-            stmt.executeUpdate(sqlCrearDB);
-            System.out.println("Base de datos 'personas' creada o ya existe.");
+            String sql = "CREATE DATABASE IF NOT EXISTS personas";
+            stmt.executeUpdate(sql);
+            System.out.println("Base de datos 'personas' creada o ya existia.");
         } catch (SQLException e) {
             e.printStackTrace();
-            mostrarAlertaError("Error al crear la base de datos", "No se pudo crear la base de datos 'personas'.");
         }
     }
 
