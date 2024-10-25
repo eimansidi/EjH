@@ -46,11 +46,10 @@ public class HelloController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Conectar a la base de datos 'personas' si existe, o crearla si no existe
-        connection = conectarBaseDatos("personas"); // Conectar a la BD existente
-        if (connection != null) { // Proceder solo si la conexión fue exitosa
-            crearTablaPersonas(); // Crear la tabla 'Persona' si no existe
-            cargarDatosDesdeBaseDeDatos(); // Cargar los datos existentes
+        connection = conectarBaseDatos("personas");
+        if (connection != null) {
+            crearTablaPersonas();
+            cargarDatosDesdeBaseDeDatos();
         }
         // Configurar columnas de la tabla
         nombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
@@ -61,7 +60,6 @@ public class HelloController implements Initializable {
     Connection conectarBaseDatos(String dbName) {
         Connection conn = null;
         try {
-            // Intentar conectar a la base de datos
             conn = DriverManager.getConnection(db_url + dbName, user, password);
             mostrarAlertaExito("Info", "Conexión exitosa a la base de datos: " + dbName);
         } catch (SQLException e) {
@@ -88,7 +86,7 @@ public class HelloController implements Initializable {
     }
 
     private void crearTablaPersonas() {
-        if (!tablaExiste("Persona")) {  // Verifica si la tabla ya existe
+        if (!tablaExiste("Persona")) {
             String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS Persona ("
                     + "id INT NOT NULL AUTO_INCREMENT, "
                     + "nombre VARCHAR(250) NULL DEFAULT NULL, "
