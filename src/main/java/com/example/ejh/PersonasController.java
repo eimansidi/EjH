@@ -1,5 +1,6 @@
 package com.example.ejh;
 
+import com.example.ejh.model.Persona;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,7 +19,7 @@ import java.net.URL;
 import java.sql.*;
 import java.util.ResourceBundle;
 
-public class HelloController implements Initializable {
+public class PersonasController implements Initializable {
 
     @FXML
     private TableView<Persona> tableView;
@@ -44,6 +45,13 @@ public class HelloController implements Initializable {
     private final String user = "admin";
     private final String password = "12345678";
 
+    /**
+     * Metodo inicial que configura la conexion con la base de datos, la tabla
+     * y carga los datos de la base de datos si la conexion es exitosa.
+     *
+     * @param location La URL de la ubicacion del archivo FXML.
+     * @param resources El recurso utilizado por la vista FXML.
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         connection = conectarBaseDatos("personas");
@@ -57,6 +65,12 @@ public class HelloController implements Initializable {
         edad.setCellValueFactory(new PropertyValueFactory<>("edad"));
     }
 
+    /**
+     * Metodo para conectar con la base de datos. Si la base de datos no existe, la crea.
+     *
+     * @param dbName El nombre de la base de datos a conectar.
+     * @return La conexion a la base de datos.
+     */
     Connection conectarBaseDatos(String dbName) {
         Connection conn = null;
         try {
@@ -73,6 +87,9 @@ public class HelloController implements Initializable {
         return conn;
     }
 
+    /**
+     * Metodo para crear la base de datos si no existe.
+     */
     private void crearBaseDatos() {
         try (Connection conn = DriverManager.getConnection(db_url, user, password);
              Statement stmt = conn.createStatement()) {
@@ -85,6 +102,9 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Metodo para crear la tabla 'Persona' en la base de datos si no existe.
+     */
     private void crearTablaPersonas() {
         if (!tablaExiste("Persona")) {
             String sqlCrearTabla = "CREATE TABLE IF NOT EXISTS Persona ("
@@ -107,6 +127,12 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Verifica si la tabla con el nombre proporcionado existe en la base de datos.
+     *
+     * @param nombreTabla El nombre de la tabla a verificar.
+     * @return true si la tabla existe, false si no existe.
+     */
     private boolean tablaExiste(String nombreTabla) {
         try (ResultSet rs = connection.getMetaData().getTables(null, null, nombreTabla, null)) {
             return rs.next();
@@ -117,6 +143,10 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Metodo para cargar los datos de la tabla Persona desde la base de datos
+     * y agregarlos a la tabla en la interfaz de usuario.
+     */
     private void cargarDatosDesdeBaseDeDatos() {
         String sql = "SELECT * FROM Persona";
         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
@@ -133,6 +163,11 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Abre una ventana para agregar una nueva persona.
+     *
+     * @param event El evento de acción.
+     */
     @FXML
     void agregar(ActionEvent event) {
         try {
@@ -154,6 +189,11 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Abre una ventana para modificar una persona seleccionada en la tabla.
+     *
+     * @param event El evento de acción.
+     */
     @FXML
     void modificar(ActionEvent event) {
         Persona personaSeleccionada = tableView.getSelectionModel().getSelectedItem();
@@ -182,6 +222,11 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Elimina la persona seleccionada de la tabla y la base de datos.
+     *
+     * @param event El evento de acción.
+     */
     @FXML
     void eliminar(ActionEvent event) {
         Persona personaSeleccionada = tableView.getSelectionModel().getSelectedItem();
@@ -202,15 +247,32 @@ public class HelloController implements Initializable {
         }
     }
 
+    /**
+     * Agrega una persona a la tabla en la interfaz de usuario.
+     *
+     * @param persona La persona a agregar.
+     */
     public void agregarPersonaTabla(Persona persona) {
         tableView.getItems().add(persona);
     }
 
+    /**
+     * Modifica los datos de una persona en la tabla.
+     *
+     * @param personaOriginal La persona original que se quiere modificar.
+     * @param personaModificada La persona con los nuevos datos.
+     */
     public void modificarPersonaTabla(Persona personaOriginal, Persona personaModificada) {
         int indice = tableView.getItems().indexOf(personaOriginal);
         tableView.getItems().set(indice, personaModificada);
     }
 
+    /**
+     * Muestra una alerta de éxito con el mensaje proporcionado.
+     *
+     * @param titulo El título de la alerta.
+     * @param mensaje El mensaje que se mostrará.
+     */
     private void mostrarAlertaExito(String titulo, String mensaje) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(titulo);
@@ -219,6 +281,12 @@ public class HelloController implements Initializable {
         alert.showAndWait();
     }
 
+    /**
+     * Muestra una alerta de error con el mensaje proporcionado.
+     *
+     * @param titulo El título de la alerta.
+     * @param mensaje El mensaje que se mostrará.
+     */
     private void mostrarAlertaError(String titulo, String mensaje) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(titulo);

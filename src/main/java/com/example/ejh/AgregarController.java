@@ -1,5 +1,6 @@
 package com.example.ejh;
 
+import com.example.ejh.model.Persona;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -29,19 +30,34 @@ public class AgregarController {
     @FXML
     private Button btnCancelar;
 
-    private HelloController helloController;
+    private PersonasController helloController;
     private Persona personaOriginal;
     private boolean modoModificar;
 
-    public void setMainController(HelloController helloController) {
+    /**
+     * Establece el controlador principal para la comunicacion con la ventana principal.
+     *
+     * @param helloController El controlador principal de la aplicacion.
+     */
+    public void setMainController(PersonasController helloController) {
         this.helloController = helloController;
     }
 
+    /**
+     * Establece si se esta modificando una persona o agregando una nueva.
+     *
+     * @param modificar Si es verdadero, se activa el modo de modificacion.
+     */
     public void setModoModificar(boolean modificar) {
         this.modoModificar = modificar;
         btnGuardar.setText(modificar ? "Modificar" : "Agregar");
     }
 
+    /**
+     * Rellena los campos de texto con los datos de la persona a modificar.
+     *
+     * @param persona La persona cuyos datos se deben cargar en los campos.
+     */
     public void llenarCampos(Persona persona) {
         this.personaOriginal = persona;
         txtNombre.setText(persona.getNombre());
@@ -49,6 +65,12 @@ public class AgregarController {
         txtEdad.setText(String.valueOf(persona.getEdad()));
     }
 
+    /**
+     * Metodo para guardar o modificar los datos de una persona. Si el modo es
+     * modificar, actualiza la base de datos, si no, inserta una nueva persona.
+     *
+     * @param event El evento de accion al hacer clic en el boton guardar.
+     */
     @FXML
     void guardar(ActionEvent event) {
         String nombre = txtNombre.getText().trim();
@@ -78,12 +100,13 @@ public class AgregarController {
         }
 
         if (errores.length() > 0) {
-            mostrarAlertaError("Datos inválidos", errores.toString());
+            mostrarAlertaError("Datos invalidos", errores.toString());
             return;
         }
 
-        Connection connection = helloController.conectarBaseDatos("personas"); // Obtener conexión a la base de datos
+        Connection connection = helloController.conectarBaseDatos("personas"); // Obtener conexion a la base de datos
 
+        // Modificar persona existente
         if (modoModificar && personaOriginal != null) {
             String sql = "UPDATE Persona SET nombre = ?, apellidos = ?, edad = ? WHERE id = ?";
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
@@ -101,7 +124,7 @@ public class AgregarController {
                 mostrarAlertaError("Error al modificar", "No se pudo modificar la persona en la base de datos.");
                 return;
             }
-        } else {
+        } else {  // Agregar nueva persona
             String sql = "INSERT INTO Persona (nombre, apellidos, edad) VALUES (?, ?, ?)";
             try (PreparedStatement pstmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 pstmt.setString(1, nombre);
@@ -115,7 +138,7 @@ public class AgregarController {
                     Persona nuevaPersona = new Persona(id, nombre, apellidos, edad);
 
                     helloController.agregarPersonaTabla(nuevaPersona);
-                    mostrarAlertaExito("Info", "Persona añadida correctamente");
+                    mostrarAlertaExito("Info", "Persona anadida correctamente");
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -128,12 +151,23 @@ public class AgregarController {
         stage.close();
     }
 
+    /**
+     * Metodo para cancelar la operacion y cerrar la ventana actual.
+     *
+     * @param event El evento de accion al hacer clic en el boton cancelar.
+     */
     @FXML
     void cancelar(ActionEvent event) {
         Stage stage = (Stage) btnCancelar.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Muestra una alerta de exito con el mensaje proporcionado.
+     *
+     * @param titulo El titulo de la alerta.
+     * @param mensaje El mensaje que se mostrara en la alerta.
+     */
     private void mostrarAlertaExito(String titulo, String mensaje) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(titulo);
@@ -142,6 +176,12 @@ public class AgregarController {
         alert.showAndWait();
     }
 
+    /**
+     * Muestra una alerta de error con el mensaje proporcionado.
+     *
+     * @param titulo El titulo de la alerta.
+     * @param mensaje El mensaje que se mostrara en la alerta.
+     */
     private void mostrarAlertaError(String titulo, String mensaje) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(titulo);

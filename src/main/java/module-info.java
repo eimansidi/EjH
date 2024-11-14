@@ -6,4 +6,6 @@ module com.example.ejh {
 
     opens com.example.ejh to javafx.fxml;
     exports com.example.ejh;
+    exports com.example.ejh.model;
+    opens com.example.ejh.model to javafx.fxml;
 }

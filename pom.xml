@@ -67,7 +67,7 @@
             <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>com.example.ejh/com.example.ejh.HelloApplication</mainClass>
+              <mainClass>com.example.ejh/com.example.ejh.PersonasApplication</mainClass>
               <launcher>app</launcher>
               <jlinkZipName>app</jlinkZipName>
               <jlinkImageName>app</jlinkImageName>
